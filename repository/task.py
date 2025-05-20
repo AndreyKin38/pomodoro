@@ -1,7 +1,8 @@
 from sqlalchemy import select, delete, update
 from sqlalchemy.orm import Session
 
-from database import Tasks, get_db_session, Categories
+from database import get_db_session
+from models import Tasks, Categories
 from schema.task import TaskSchema
 
 
@@ -10,12 +11,12 @@ class TaskRepository:
     def __init__(self, db_session: Session):
         self.db_session = db_session
 
-    def get_tasks(self):
+    def get_tasks(self) -> list[Tasks]:
         with self.db_session() as session:
             task = session.execute(select(Tasks)).scalars().all()
         return task
 
-    def get_task(self, task_id: int):
+    def get_task(self, task_id: int) -> Tasks | None:
         with self.db_session() as session:
             task = session.execute(select(Tasks).where(Tasks.id == task_id)).scalar_one_or_none()
         return task
@@ -39,6 +40,18 @@ class TaskRepository:
         with self.db_session() as session:
             session.execute(query)
             session.commit()
+
+    def get_task_by_category_name(self, category_name: str) -> list[Tasks]:
+        query = select(Tasks).join(Categories, Tasks.category_id == Categories.id).where(Categories.name == category_name)
+        with self.db_session() as session:
+            task: list[Tasks] = session.execute(query).scalars().all()
+            return task
+
+    def update_task_name(self, task_id: int, name: str) -> Tasks:
+        query = select(Tasks).where(Tasks.id == task_id).values(name=name).returning(Tasks.id)
+        with self.db_session as session:
+            task_id: int = session.execute(query).scalar_one_or_none()
+            return self.get_task(task_id)
 
 
 def get_tasks_repository() -> TaskRepository:

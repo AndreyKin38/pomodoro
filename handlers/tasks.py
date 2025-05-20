@@ -1,7 +1,7 @@
 from typing import Annotated
 from fastapi import APIRouter, status, Depends
 
-from database import Tasks
+from models import Tasks
 from schema import TaskSchema
 
 from repository import TaskRepository, TaskCache
